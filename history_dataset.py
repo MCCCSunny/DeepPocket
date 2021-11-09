@@ -27,7 +27,7 @@ def download_data(symbols):
             proxy = None
         )       
 
-def process_data(data,store_file = True):
+def process_data(data,number_of_stocks,store_file = True):
     all_data_sql = []
 
     for symbol in symbols:
@@ -47,18 +47,19 @@ def process_data(data,store_file = True):
         all_data_sql.extend(df.values)
 
     total_df = pd.DataFrame(all_data_sql, columns=df.columns)
-
-    total_df.sort_values(by=['date','symbol'],ascending=True,inplace=True)
+    grouped = total_df.groupby('date')
+    fix_dates = [x for x in grouped.groups if len(grouped.get_group(x)) != number_of_stocks]
+    total_df = total_df[~total_df['date'].isin(fix_dates)]
+    total_df = total_df.sort_values(by=['date','symbol'],ascending=True)
     total_df.drop(columns=['symbol'],inplace=True) 
     total_df['date'] = total_df['date'].astype(str)
-
+    
     return total_df
 
 if __name__=='__main__':
     symbols = ['AAPL','CSCO','INTC','ORCL','MSFT','IBM','HON','VZ','MFC','JPM','BAC','TD','MMM','CAT','BA','GE','WMT','KO', 'HD','AMZN','JNJ','MRK','PFE','GILD','ENB','CVX','BP','RDSB.L']
     data = download_data(symbols)
-    prepeared_df = process_data(data)
-
+    prepeared_df = process_data(data,number_of_stocks=len(symbols))
     db_create("postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski", prepeared_df)
             
 

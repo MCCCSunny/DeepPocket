@@ -47,14 +47,12 @@ class StockTradingEnv(Env):
         starting_window_date = from_date - timedelta(days=self.trading_window_size-5)
         buffer_ending_date = from_date + timedelta(days=self.max_buffer_size+10)
         df = pd.read_sql('select * from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(str(starting_window_date),str(buffer_ending_date)),self.engine)
-        df[['v1','v2','v3']] = df[['High','Low','Close','ATR','CCI','CSI','demand_index','DMI','EMA','HMA','MOM']].apply(self.encode,axis=1)
-        df['date'] = df['date'].astype(str)
+        df[['v1','v2','v3']] = df[['High','Low','Close','ATR','CCI','CSI','demand_index','DMI','EMA','HMA','MOM']].apply(self.encode, axis=1)
         df = df.groupby('date')
-        self.current_dates_buffer = df.groups
         dates_in_buffer = list(df.groups.keys())
         index = dates_in_buffer.index(str(from_date))
 
-        return [df.get_group(x) for x in df.groups if len(df.get_group(x)) == self.number_of_stocks], index, dates_in_buffer[-1]
+        return [df.get_group(x) for x in df.groups], index, dates_in_buffer[-1]
 
 
     def reset(self):

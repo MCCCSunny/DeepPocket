@@ -5,7 +5,8 @@ import random
 
 def get_action():
     values = np.array([random.uniform(0,1) for i in range(29)])
-    return (values - values.min()) / (values - values.min()).sum()
+    x = (values - values.min()) / (values - values.min()).sum()
+    return x
     
 env = StockTradingEnv(False,10,100,"postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski",autoencoder_path='/home/niko/diplomski_rad/autoencoder/linear_autoencoder.pt')
 
