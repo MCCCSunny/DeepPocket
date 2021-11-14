@@ -1,9 +1,9 @@
-from stock_trading_env import StockTradingEnv
+from environment.stock_trading_env import StockTradingEnv
 import numpy as np
 import random
 import time
-from gnn_wrapper.gnn_wrapper import GnnObservationWrapper
-from aec_wrapper.autoencoder_wrapper import AecObservationWrapper
+from environment.gnn_wrapper.gnn_wrapper import GnnObservationWrapper
+from environment.aec_wrapper.autoencoder_wrapper import AecObservationWrapper
 
 def get_action():
     values = np.array([random.uniform(0,1) for i in range(29)])
@@ -12,7 +12,7 @@ def get_action():
 
 start = time.time()
 env = StockTradingEnv(False,10,50,"postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski")
-env = AecObservationWrapper(env,aec_layers_size = [11,[10,9]],out_features = 3,autoencoder_path='aec_wrapper/linear_autoencoder.pt')
+env = AecObservationWrapper(env,aec_layers_size = [11,[10,9]],out_features = 3,autoencoder_path='environment/aec_wrapper/linear_autoencoder.pt')
 env = GnnObservationWrapper(env,10,[3,3])
 
 

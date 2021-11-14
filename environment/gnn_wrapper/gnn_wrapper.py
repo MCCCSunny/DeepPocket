@@ -1,7 +1,7 @@
 import gym
 from collections import deque
 import numpy as np
-from gnn_wrapper.model import ChebNetwork
+from environment.gnn_wrapper.model import ChebNetwork
 import torch
 from torch_geometric.data import Data, Batch
 

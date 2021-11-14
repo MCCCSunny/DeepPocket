@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 import torch
-from aec_wrapper.autoencoder.model import LinearAutoEncoder
+from environment.aec_wrapper.autoencoder.model import LinearAutoEncoder
 
 class AecObservationWrapper(gym.ObservationWrapper):
     def __init__(self, env, aec_layers_size, out_features, autoencoder_path):
