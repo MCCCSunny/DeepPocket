@@ -5,14 +5,13 @@ import torch
 from sqlalchemy import create_engine
 import pandas as pd
 from datetime import timedelta, datetime
-from autoencoder.model import LinearAutoEncoder
 from math import log
 
 class StockTradingEnv(Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, online, trading_window_size,max_buffer_size,database_url,autoencoder_path,number_of_stocks = 28, start_date = "2020-01-02", end_date = "2021-01-02",starting_cash = 2000):
+    def __init__(self, online, trading_window_size,max_buffer_size,database_url,number_of_stocks = 28, start_date = "2020-01-02", end_date = "2021-01-02",starting_cash = 2000):
         self.seed()
         self.engine = create_engine(database_url)
         self.commision_p = 0.0025 
@@ -20,9 +19,6 @@ class StockTradingEnv(Env):
         self.number_of_stocks = number_of_stocks
         self.max_buffer_size = max_buffer_size
         self.trading_window_size = trading_window_size
-        self.autoencoder = LinearAutoEncoder(in_features =  11, hidden_size = [10,9], out_features = 3)
-        self.autoencoder.load_state_dict(torch.load(autoencoder_path))
-        self.autoencoder.eval()
 
         # spaces
         self.action_space = spaces.Discrete(3)
@@ -32,8 +28,7 @@ class StockTradingEnv(Env):
         self.starting_portfolio_value = starting_cash
         self.current_portfolio_value = self.starting_portfolio_value
         self.starting_date = datetime.strptime(start_date,'%Y-%m-%d').date()
-        self.trading_buffer, self.start_tick,self.buffer_end_date = self.get_data(self.starting_date)
-        self.end_tick = np.busday_count(self.starting_date, datetime.strptime(end_date,'%Y-%m-%d').date())
+        self.end_tick = int(pd.read_sql('select count(*) from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(start_date, end_date),self.engine).iloc[0]['count'] / 28)
         self.done = False
         self.found_aprox_mi = False
         self.position = None
@@ -44,20 +39,18 @@ class StockTradingEnv(Env):
 
     def get_data(self,from_date):
         from_date = datetime.strptime(str(from_date),'%Y-%m-%d').date()
-        starting_window_date = from_date - timedelta(days=self.trading_window_size-5)
+        starting_window_date = from_date - timedelta(days=self.trading_window_size+10)
         buffer_ending_date = from_date + timedelta(days=self.max_buffer_size+10)
         df = pd.read_sql('select * from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(str(starting_window_date),str(buffer_ending_date)),self.engine)
-        df[['v1','v2','v3']] = df[['High','Low','Close','ATR','CCI','CSI','demand_index','DMI','EMA','HMA','MOM']].apply(self.encode, axis=1)
         df = df.groupby('date')
         dates_in_buffer = list(df.groups.keys())
         index = dates_in_buffer.index(str(from_date))
-
-        return [df.get_group(x) for x in df.groups], index, dates_in_buffer[-1]
+        
+        return [df.get_group(x).to_numpy() for x in df.groups], index, dates_in_buffer[-1]
 
 
     def reset(self):
         self.done = False
-        self.current_tick = self.start_tick
         self.position = np.concatenate(([1],np.zeros(self.number_of_stocks)),axis = 0)
         self.total_reward = 0.0
         self.history = {}
@@ -70,7 +63,6 @@ class StockTradingEnv(Env):
 
 
     def step(self, equity_stock_weights):
-        self.done = False
         self.current_tick += 1
         self.days +=1
         if self.days == self.end_tick:
@@ -85,6 +77,7 @@ class StockTradingEnv(Env):
 
 
         observation = self.get_observation()
+
         info = dict(
             portfolio_value = self.current_portfolio_value,
             reward = step_reward,
@@ -97,7 +90,13 @@ class StockTradingEnv(Env):
 
 
     def get_observation(self):
-        return [x[['v1','v2','v3']].to_numpy() for x in self.trading_buffer[self.current_tick-self.trading_window_size:self.current_tick]]
+
+        if self.days == 0:
+            return np.array([x for x in self.trading_buffer[self.current_tick-self.trading_window_size:self.current_tick]])
+        else:
+            return self.trading_buffer[self.current_tick - 1]
+
+        
 
 
     def update_history(self, info):
@@ -109,7 +108,7 @@ class StockTradingEnv(Env):
 
     def calculate_reward(self, stock_weights):
 
-        y_t =  np.concatenate(([1],self.trading_buffer[self.current_tick][['Close']].to_numpy().reshape(-1)), axis=0)
+        y_t =  np.concatenate(([1],self.trading_buffer[self.current_tick][:,5].reshape(-1)), axis=0)
         
         # Aprox mi
         if not self.found_aprox_mi:
@@ -140,12 +139,6 @@ class StockTradingEnv(Env):
     def get_current_portfolio_value(self):
         return self.current_portfolio_value
     
-    @torch.no_grad()
-    def encode(self,row):
-        output = self.autoencoder.encode(torch.tensor(row.values,dtype=torch.float32))
-
-        return pd.Series([output[0].item(),output[1].item(), output[2].item()])
-
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
 
