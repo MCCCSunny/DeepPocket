@@ -23,8 +23,8 @@ for i in range(10):
         a.append(reward)
 
     print(env.get_current_portfolio_value())
-    
-print(time.time() - start)
+
+print('Training time:',time.time() - start)
 done = False
 env.set_dates('2016-01-02','2017-01-02')
 obs, weights = env.reset()
@@ -35,10 +35,3 @@ while not done:
     a.append(reward)
 
 print(env.get_current_portfolio_value())
-
-
-
-
-
-
-
