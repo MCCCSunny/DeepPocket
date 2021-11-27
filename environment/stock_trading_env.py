@@ -1,17 +1,17 @@
 from gym import spaces, Env
 from gym.utils import seeding
 import numpy as np
-import torch
 from sqlalchemy import create_engine
 import pandas as pd
 from datetime import timedelta, datetime
 from math import log
+from torch.distributions import Categorical
 
 class StockTradingEnv(Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, online, trading_window_size,max_buffer_size,database_url,number_of_stocks = 28, start_date = "2020-01-02", end_date = "2021-01-02",starting_cash = 2000):
+    def __init__(self, online, trading_window_size,max_buffer_size,database_url,number_of_stocks = 28, start_date = "2016-06-02", end_date = "2019-01-02",starting_cash = 2000):
         self.seed()
         self.engine = create_engine(database_url)
         self.commision_p = 0.0025 
@@ -39,14 +39,13 @@ class StockTradingEnv(Env):
 
     def get_data(self,from_date):
         from_date = datetime.strptime(str(from_date),'%Y-%m-%d').date()
-        starting_window_date = from_date - timedelta(days=self.trading_window_size+10)
-        buffer_ending_date = from_date + timedelta(days=self.max_buffer_size+10)
+        starting_window_date = from_date - timedelta(days=self.trading_window_size*2)
+        buffer_ending_date = from_date + timedelta(days=self.max_buffer_size+20)
         df = pd.read_sql('select * from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(str(starting_window_date),str(buffer_ending_date)),self.engine)
+        index = (df['date'].values != str(from_date)).argmin() // 28
         df = df.groupby('date')
-        dates_in_buffer = list(df.groups.keys())
-        index = dates_in_buffer.index(str(from_date))
         
-        return [df.get_group(x).to_numpy() for x in df.groups], index, dates_in_buffer[-1]
+        return [df.get_group(x).to_numpy() for x in df.groups], index, str(buffer_ending_date)
 
 
     def reset(self):
@@ -54,27 +53,26 @@ class StockTradingEnv(Env):
         self.position = np.concatenate(([1],np.zeros(self.number_of_stocks)),axis = 0)
         self.total_reward = 0.0
         self.history = {}
-        self.mi = 0
         self.days = 0
         self.current_portfolio_value = self.starting_portfolio_value
         self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.starting_date)
-
-        return self.get_observation(), self.position
+        
+        return self.get_observation(reset=True), self.position
 
 
     def step(self, equity_stock_weights):
-        self.current_tick += 1
+        equity_stock_weights = equity_stock_weights.clone().detach().numpy()
         self.days +=1
+        self.current_tick += 1
+
         if self.days == self.end_tick:
             self.done = True
         
         if self.current_tick == len(self.trading_buffer):
             self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.buffer_end_date)
 
-        equity_stock_weights = np.array(equity_stock_weights)
         step_reward = self.calculate_reward(equity_stock_weights)
         self.total_reward += step_reward
-
 
         observation = self.get_observation()
 
@@ -89,14 +87,11 @@ class StockTradingEnv(Env):
         return observation, step_reward, self.done, info
 
 
-    def get_observation(self):
-
-        if self.days == 0:
-            return np.array([x for x in self.trading_buffer[self.current_tick-self.trading_window_size:self.current_tick]])
+    def get_observation(self,reset = False):
+        if reset:
+            return np.array(self.trading_buffer[self.current_tick-self.trading_window_size:self.current_tick]) 
         else:
             return self.trading_buffer[self.current_tick - 1]
-
-        
 
 
     def update_history(self, info):
@@ -108,7 +103,7 @@ class StockTradingEnv(Env):
 
     def calculate_reward(self, stock_weights):
 
-        y_t =  np.concatenate(([1],self.trading_buffer[self.current_tick][:,5].reshape(-1)), axis=0)
+        y_t = np.concatenate(([1],self.trading_buffer[self.current_tick][:,5].reshape(-1)), axis=0)
         
         # Aprox mi
         if not self.found_aprox_mi:
@@ -133,7 +128,7 @@ class StockTradingEnv(Env):
 
         self.current_portfolio_value = self.current_portfolio_value *self.mi * np.dot(y_t,stock_weights)
 
-        return log(self.mi * np.dot( y_t, stock_weights))
+        return log(self.mi * np.dot(y_t, stock_weights))
 
     
     def get_current_portfolio_value(self):

@@ -1,6 +1,8 @@
 import talib as tb
 from math import sqrt,isnan
 import numpy as np
+import warnings
+warnings.filterwarnings("error")
 
 def calculate_csi(high, low, close,atr, timeperiod = 14):
     adx = tb.ADX(high, low, close, timeperiod=timeperiod)
@@ -66,11 +68,15 @@ def calculate_demand_index(open,high, low, close, volume, timeperiod = 14):
 
 def calculate_dmi(c):
     dmi = []
-    std = [np.std(c[i:i+5]) for i in range(len(c))]
+    std = [np.std(c[i:i+10]) for i in range(len(c))]
     ma = tb.SMA(np.array(std),10)
     std = std[10:]
     ma = ma[10:]
+    m = np.median(ma[ma > 0])
+    ma[ma == 0] = m
     v = std/ma
+
+    
     for i in range(len(c)):
         value = np.nan
         if i > 10:
