@@ -5,13 +5,12 @@ from sqlalchemy import create_engine
 import pandas as pd
 from datetime import timedelta, datetime
 from math import log
-from torch.distributions import Categorical
 
 class StockTradingEnv(Env):
 
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, online, trading_window_size,max_buffer_size,database_url,number_of_stocks = 28, start_date = "2016-06-02", end_date = "2019-01-02",starting_cash = 2000):
+    def __init__(self, online, trading_window_size,max_buffer_size,database_url,number_of_stocks = 28, start_date = "2015-01-02", end_date = "2016-01-02",starting_cash = 2000):
         self.seed()
         self.engine = create_engine(database_url)
         self.commision_p = 0.0025 
@@ -27,7 +26,7 @@ class StockTradingEnv(Env):
         # episode
         self.starting_portfolio_value = starting_cash
         self.current_portfolio_value = self.starting_portfolio_value
-        self.starting_date = datetime.strptime(start_date,'%Y-%m-%d').date()
+        self.starting_date = start_date
         self.end_tick = int(pd.read_sql('select count(*) from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(start_date, end_date),self.engine).iloc[0]['count'] / 28)
         self.done = False
         self.found_aprox_mi = False
@@ -42,7 +41,8 @@ class StockTradingEnv(Env):
         starting_window_date = from_date - timedelta(days=self.trading_window_size*2)
         buffer_ending_date = from_date + timedelta(days=self.max_buffer_size+20)
         df = pd.read_sql('select * from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(str(starting_window_date),str(buffer_ending_date)),self.engine)
-        index = (df['date'].values != str(from_date)).argmin() // 28
+        index = df[df['date'].ge(str(from_date))].index[0] // 28
+        buffer_ending_date = df.iloc[-1]['date']
         df = df.groupby('date')
         
         return [df.get_group(x).to_numpy() for x in df.groups], index, str(buffer_ending_date)
@@ -56,7 +56,7 @@ class StockTradingEnv(Env):
         self.days = 0
         self.current_portfolio_value = self.starting_portfolio_value
         self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.starting_date)
-        
+
         return self.get_observation(reset=True), self.position
 
 
@@ -138,4 +138,8 @@ class StockTradingEnv(Env):
         self.np_random, seed = seeding.np_random(seed)
 
         return [seed]
-
+    
+    def set_dates(self,start_date,end_date):
+        self.starting_date = start_date
+        self.end_tick = int(pd.read_sql('select count(*) from data a where a.date >= \'{}\' and a.date <= \'{}\''.format(start_date, end_date),self.engine).iloc[0]['count'] / 28)
+            

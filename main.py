@@ -11,9 +11,8 @@ agent = Agent(3,28,env.get_model_parameters(),50,0.001,0.95)
 
 a = []
 start = time.time()
-counter = 0
 
-for i in range(1):
+for i in range(10):
     done = False
     obs, weights = env.reset()
     while not done:
@@ -23,11 +22,21 @@ for i in range(1):
         obs = obs_
         a.append(reward)
 
-print(time.time()-start)
-print(env.end_tick)
+    print(env.get_current_portfolio_value())
+    
+print(time.time() - start)
+done = False
+env.set_dates('2016-01-02','2017-01-02')
+obs, weights = env.reset()
+while not done:
+    weights = agent.get_action(obs,weights)
+    obs_, reward, done, _ = env.step(weights)
+    obs = obs_
+    a.append(reward)
+
 print(env.get_current_portfolio_value())
 
-        
+
 
 
 
