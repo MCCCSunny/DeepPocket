@@ -34,7 +34,7 @@ class GnnObservationWrapper(gym.ObservationWrapper):
         self.data_deque.extend(data_list)
         batch = Batch.from_data_list(list(self.data_deque))
 
-        return self.gcn(batch).reshape(self.number_of_assets,self.trading_window_size,3).permute(2, 0, 1).unsqueeze(0).detach(), torch.tensor(position, dtype= torch.float32)
+        return self.gcn(batch).reshape(self.number_of_assets,self.trading_window_size,3).permute(2, 0, 1).unsqueeze(0), position
 
     def observation(self, observation):
         corr = np.corrcoef(observation).flatten()
@@ -43,7 +43,7 @@ class GnnObservationWrapper(gym.ObservationWrapper):
         self.data_deque.append(Data(x = observation, edge_index = self.edge_index, edge_attr = weights))
         batch = Batch.from_data_list(list(self.data_deque))
 
-        return self.gcn(batch).reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0).detach()
+        return self.gcn(batch).reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0)
 
     
     def get_model_parameters(self):
