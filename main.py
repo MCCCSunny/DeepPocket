@@ -7,24 +7,24 @@ import torch
 env = StockTradingEnv(False,15,100,"postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski",start_date = "2002-03-01",end_date="2009-04-16")
 env = AecObservationWrapper(env,aec_layers_size = [11,[10,9]],out_features = 3,autoencoder_path='environment/aec_wrapper/linear_autoencoder.pt')
 env = GnnObservationWrapper(env,15,[3,[16,16,16],3],3,number_of_assets=28)
-agent = Agent(3,28,env.get_model_parameters(),15,[3,29],25,4e-4,0.97,25)
+agent = Agent(3,28,env.get_model_parameters(),15,[3,29],50,1e-4,0.98,50)
 
 a = []
 start = time.time()
-
 for i in range(1000):
     done = False
     obs, weights = env.reset()
-    actions = []
-    adventages = []
     while not done:
         weights = agent.get_action(obs,weights)
         obs_, reward, done, _ = env.step(weights.detach().numpy())
         agent.store_transition(obs.detach(), weights, reward, obs_.detach())
         obs = obs_
         agent.learn()
+        a.append(env.get_current_portfolio_value())
         
-    print(env.get_current_portfolio_value())
+        
+    print(min(a),env.get_current_portfolio_value(),max(a))
+    a = []
 
 print('Training time:',time.time() - start)
 done = False

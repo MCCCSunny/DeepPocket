@@ -48,11 +48,15 @@ class Agent():
         x = torch.stack(x)
 
         mean = torch.mean(x, dim=0)
-        if self.batch_size == 1:
-            std = mean
-        else:
-            std = torch.std(x, dim = 0)
+        std = torch.std(x, dim = 0)
 
+        if torch.isnan(std).any():
+            std = torch.FloatTensor(29).uniform_(1e-4, 1e-2)
+        
+        mean = torch.clip(mean, min = 1e-3, max = 60)
+        std = torch.clip(std,min = 1e-5,max = 20)
+    
+    
         dist = Normal(mean,std)
         actor_loss = 0 
         for x,y in zip(actions,adv):

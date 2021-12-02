@@ -103,54 +103,54 @@ class StockTradingEnv(Env):
         for key, value in info.items():
             self.history[key].append(value)
 
-    def calculate_reward(self, stock_weights):
-        portfolio_value_before = self.get_current_portfolio_value()
-        
-
-        transaction_cost = portfolio_value_before * 0.0025 * np.linalg.norm((stock_weights-self.position),ord = 1)
-        
-
-        value_after_transaction = (portfolio_value_before * stock_weights) - np.array([transaction_cost]+ [0] * 28)
-
-        y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
-        NewValueofStocks = value_after_transaction * y_t
-        
-        
-        new_portfolio_value = np.sum(NewValueofStocks)
-
-        reward_value = (new_portfolio_value - self.get_current_portfolio_value()) / (self.get_current_portfolio_value())
-        self.current_portfolio_value = new_portfolio_value
-        
-        return reward_value
-
     # def calculate_reward(self, stock_weights):
+    #     portfolio_value_before = self.get_current_portfolio_value()
+        
+
+    #     transaction_cost = portfolio_value_before * 0.0025 * np.linalg.norm((stock_weights-self.position),ord = 1)
+        
+
+    #     value_after_transaction = (portfolio_value_before * stock_weights) - np.array([transaction_cost]+ [0] * 28)
 
     #     y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
+    #     new_stock_value = value_after_transaction * y_t
         
-    #     # Aprox mi
-    #     if not self.found_aprox_mi:
-    #         commision_weights = (y_t * stock_weights)/ np.dot(y_t, stock_weights)
-    #         #Only first mi aprox
-    #         if self.current_tick == self.trading_window_size + 1:
-    #             self.mi = self.commision_p * sum(abs(commision_weights-stock_weights)[1:])
-    #         else:
-    #             pos_sum = 0
-    #             for i in range(1,len(stock_weights)):
-    #                 value = commision_weights[i] - self.mi * stock_weights[i]
-    #                 if value > 0.0:
-    #                     pos_sum = pos_sum + value
+        
+    #     new_portfolio_value = np.sum(new_stock_value)
 
-    #             new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
+    #     reward_value = (new_portfolio_value - self.get_current_portfolio_value()) / (self.get_current_portfolio_value())
+    #     self.current_portfolio_value = new_portfolio_value
+        
+    #     return reward_value
+
+    def calculate_reward(self, stock_weights):
+
+        y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
+        
+        # Aprox mi
+        if not self.found_aprox_mi:
+            commision_weights = (y_t * stock_weights)/ np.dot(y_t, stock_weights)
+            #Only first mi aprox
+            if self.current_tick == self.trading_window_size + 1:
+                self.mi = self.commision_p * sum(abs(commision_weights-stock_weights)[1:])
+            else:
+                pos_sum = 0
+                for i in range(1,len(stock_weights)):
+                    value = commision_weights[i] - self.mi * stock_weights[i]
+                    if value > 0.0:
+                        pos_sum = pos_sum + value
+
+                new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
             
-    #         #stop aprox if condition 
-    #         if abs(self.mi -new_mi ) < 0.0001:
-    #             self.found_aprox_mi = True
+            #stop aprox if condition 
+            if abs(self.mi -new_mi ) < 0.0001:
+                self.found_aprox_mi = True
 
-    #         self.mi = new_mi
+            self.mi = new_mi
         
-    #     self.current_portfolio_value = self.current_portfolio_value *self.mi * np.dot(y_t,stock_weights)
-    #     self.x += log(self.mi * np.dot(y_t,stock_weights))
-    #     return self.x
+        self.current_portfolio_value = self.current_portfolio_value *self.mi * np.dot(y_t,stock_weights)
+        self.x += log(self.mi * np.dot(y_t,stock_weights))
+        return (1/self.days )* self.x
 
     
     def get_current_portfolio_value(self):
