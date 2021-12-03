@@ -21,7 +21,7 @@ class StockTradingEnv(Env):
 
         # spaces
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape = (self.trading_window_size,self.number_of_stocks + 1),dtype=np.float32)
+        self.observation_space = spaces.Box(low=0.0, high=1.0, shape = (self.trading_window_size,self.number_of_stocks + 1),dtype=np.float32)
 
         # episode
         self.starting_portfolio_value = starting_cash
@@ -103,25 +103,6 @@ class StockTradingEnv(Env):
         for key, value in info.items():
             self.history[key].append(value)
 
-    # def calculate_reward(self, stock_weights):
-    #     portfolio_value_before = self.get_current_portfolio_value()
-        
-
-    #     transaction_cost = portfolio_value_before * 0.0025 * np.linalg.norm((stock_weights-self.position),ord = 1)
-        
-
-    #     value_after_transaction = (portfolio_value_before * stock_weights) - np.array([transaction_cost]+ [0] * 28)
-
-    #     y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
-    #     new_stock_value = value_after_transaction * y_t
-        
-        
-    #     new_portfolio_value = np.sum(new_stock_value)
-
-    #     reward_value = (new_portfolio_value - self.get_current_portfolio_value()) / (self.get_current_portfolio_value())
-    #     self.current_portfolio_value = new_portfolio_value
-        
-    #     return reward_value
 
     def calculate_reward(self, stock_weights):
 

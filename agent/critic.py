@@ -11,7 +11,7 @@ class Critic(nn.Module):
         self.conv2 = nn.Conv2d(in_channels,trading_window_size,kernel_size=(1,1))
         self.conv3 = nn.Conv2d(trading_window_size,1,kernel_size=(1,trading_window_size))
         self.dense = nn.Linear(num_assets,1)
-        self.optimizer = optim.Adam(self.parameters(),lr = lr)
+        self.optimizer = optim.Adam(self.parameters(),lr = lr,weight_decay=2e-9)
 
     def forward(self,x):
         x = F.relu(self.conv1(x))

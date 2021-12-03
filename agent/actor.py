@@ -11,7 +11,7 @@ class Actor(nn.Module):
         self.conv2 = nn.Conv2d(3,3, kernel_size=(1,trading_window_size-2))
         self.conv3 = nn.Conv2d(4,1,kernel_size=(1,1))
         params = list(gnn_parameters) + list(self.parameters())
-        self.optimizer = optim.Adam(params,lr = lr)
+        self.optimizer = optim.Adam(params,lr = lr,weight_decay=2e-9)
 
     def forward(self, x, prev_weigths):
         prev_weigths = torch.tensor(prev_weigths, dtype=torch.float32)

@@ -40,7 +40,8 @@ class Agent():
         q_next = self.critic(states_)
         target_value = rewards + self.gamma* q_next
         adv =  target_value - q_pred
-        critic_loss = torch.dot(adv,q_pred)
+        critic_loss = (adv *self.criterion(target_value,q_pred)).sum()
+        # critic_loss = torch.dot(adv,q_pred)
         critic_loss.backward()
 
         self.critic.optimizer.step()
@@ -53,7 +54,7 @@ class Agent():
         if torch.isnan(std).any():
             std = torch.FloatTensor(29).uniform_(1e-4, 1e-2)
         
-        mean = torch.clip(mean, min = 1e-3, max = 60)
+        mean = torch.clip(mean, min = 1e-5, max = 60)
         std = torch.clip(std,min = 1e-5,max = 20)
     
     

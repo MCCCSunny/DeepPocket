@@ -4,14 +4,15 @@ from environment.gnn_wrapper.gnn_wrapper import GnnObservationWrapper
 from environment.aec_wrapper.autoencoder_wrapper import AecObservationWrapper
 from agent.agent import Agent
 import torch
-env = StockTradingEnv(False,15,100,"postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski",start_date = "2002-03-01",end_date="2009-04-16")
+
+env = StockTradingEnv(False,20,100,"postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski",start_date = "2002-03-01",end_date="2009-04-16")
 env = AecObservationWrapper(env,aec_layers_size = [11,[10,9]],out_features = 3,autoencoder_path='environment/aec_wrapper/linear_autoencoder.pt')
-env = GnnObservationWrapper(env,15,[3,[16,16,16],3],3,number_of_assets=28)
-agent = Agent(3,28,env.get_model_parameters(),15,[3,29],50,1e-4,0.98,50)
+env = GnnObservationWrapper(env,20,[3,[8,8,8],3],3,number_of_assets=28)
+agent = Agent(3,28,env.get_model_parameters(),20,[3,29],25,1e-3,0.97,25)
 
 a = []
 start = time.time()
-for i in range(1000):
+for i in range(100):
     done = False
     obs, weights = env.reset()
     while not done:

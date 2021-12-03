@@ -20,7 +20,7 @@ class GnnObservationWrapper(gym.ObservationWrapper):
     def calculate_corr(self, obs):
         corr_list = []
         for i in range(0,len(obs)):
-            corr = 1-np.corrcoef(obs[i])
+            corr = abs(np.corrcoef(obs[i]))
             corr_list.append(corr.flatten())
 
         return corr_list
@@ -39,7 +39,7 @@ class GnnObservationWrapper(gym.ObservationWrapper):
     def observation(self, observation):
         corr = np.corrcoef(observation).flatten()
         observation = torch.tensor(observation, dtype = torch.float32)
-        weights = torch.tensor(1-corr, dtype = torch.float32)
+        weights = torch.tensor(abs(corr), dtype = torch.float32)
         self.data_deque.append(Data(x = observation, edge_index = self.edge_index, edge_attr = weights))
         batch = Batch.from_data_list(list(self.data_deque))
 
