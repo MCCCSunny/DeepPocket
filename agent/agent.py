@@ -7,9 +7,9 @@ from torch.distributions import Normal
 
 class Agent():
 
-    def __init__(self, in_channels,assets_number,gnn_parameters, trading_window_size,input_dims,mem_size, lr, gamma,batch_size):
-        self.actor = Actor(in_channels,trading_window_size,lr = lr,gnn_parameters = gnn_parameters)
-        self.critic = Critic(in_channels,assets_number,trading_window_size,lr = lr)
+    def __init__(self, in_channels,assets_number,gnn_parameters, trading_window_size,actor_lr,critic_lr,actor_weight_decay,critic_weight_decay,gamma,batch_size,mem_size,input_dims):
+        self.actor = Actor(in_channels,trading_window_size,actor_lr = actor_lr,gnn_parameters = gnn_parameters,actor_weight_decay = actor_weight_decay)
+        self.critic = Critic(in_channels,assets_number,trading_window_size,lr = critic_lr,weight_decay = critic_weight_decay)
         self.gamma = gamma
         self.batch_size = batch_size
         self.criterion = torch.nn.MSELoss()
@@ -48,14 +48,13 @@ class Agent():
         x = [action.detach() for action in actions]
         x = torch.stack(x)
 
-        mean = torch.mean(x, dim=0)
-        std = torch.std(x, dim = 0)
+        mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
         if torch.isnan(std).any():
-            std = torch.FloatTensor(29).uniform_(1e-4, 1e-2)
+            std = torch.FloatTensor(29).uniform_(1e-5, 1e-2)
         
-        mean = torch.clip(mean, min = 1e-5, max = 60)
-        std = torch.clip(std,min = 1e-5,max = 20)
+        mean = torch.clip(mean, min = 1e-6, max = 60)
+        std = torch.clip(std,min = 1e-6,max = 30)
     
     
         dist = Normal(mean,std)
@@ -63,7 +62,7 @@ class Agent():
         for x,y in zip(actions,adv):
             actor_loss += -1*dist.log_prob(x) * y.detach()
 
-        actor_loss = torch.sum(actor_loss)
+        actor_loss = torch.mean(actor_loss)
         actor_loss.backward()
         self.actor.optimizer.step()
         self.memory.reset()
