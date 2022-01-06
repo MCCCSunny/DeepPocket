@@ -128,11 +128,11 @@ class StockTradingEnv(Env):
                 self.found_aprox_mi = True
 
             self.mi = new_mi
-        value = self.mi * np.dot(y_t,stock_weights)
-        self.current_portfolio_value = self.current_portfolio_value *value
-        self.x += (log(value) - 1) 
 
-        return (1/(self.days))* self.x
+        self.before = self.current_portfolio_value
+        self.current_portfolio_value = self.current_portfolio_value * self.mi * np.dot(y_t,stock_weights)
+
+        return log(self.current_portfolio_value/self.before)
 
     
     def get_current_portfolio_value(self):
