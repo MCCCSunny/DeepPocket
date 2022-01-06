@@ -124,15 +124,15 @@ class StockTradingEnv(Env):
                 new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
             
             #stop aprox if condition 
-            if abs(self.mi -new_mi ) < 0.0001:
+            if abs(self.mi -new_mi ) < 0.00001:
                 self.found_aprox_mi = True
 
             self.mi = new_mi
-        value = self.mi * np.dot(y_t,stock_weights)
-        self.current_portfolio_value = self.current_portfolio_value *value
-        self.x += (log(value) - 1) 
 
-        return (1/(self.days))* self.x
+        before = self.current_portfolio_value
+        self.current_portfolio_value = self.current_portfolio_value *self.mi * np.dot(y_t,stock_weights)
+
+        return log(self.current_portfolio_value/before) * 1000
 
     
     def get_current_portfolio_value(self):

@@ -6,8 +6,8 @@ class ChebNetwork(torch.nn.Module):
         super(ChebNetwork, self).__init__()
         self.input_conv = nn.ChebConv(in_channels, hidden_channels[0], K=K)
         self.hidden_layers = []
-        for i in range(len(hidden_channels)-1):
-            self.hidden_layers.append(nn.ChebConv(hidden_channels[i], hidden_channels[i+1], K=K))
+        for i in range(1,len(hidden_channels)):
+            self.hidden_layers.append(nn.ChebConv(hidden_channels[i-1], hidden_channels[i], K=K))
         self.output_conv = nn.ChebConv(hidden_channels[len(hidden_channels)-1], out_channels, K=K)
 
     

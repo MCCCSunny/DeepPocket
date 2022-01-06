@@ -15,10 +15,9 @@ class Actor(nn.Module):
 
     def forward(self, x, prev_weigths):
         prev_weigths = prev_weigths.clone().detach()
-
         x = torch.tanh(self.conv1(x))
         x = torch.tanh(self.conv2(x))
-        x = torch.cat((prev_weigths[1:].unsqueeze(-1).unsqueeze(0),x.squeeze(0)),0).unsqueeze(0)
+        x = torch.cat((prev_weigths[1:].unsqueeze(-1).unsqueeze(0),x.squeeze(0))).unsqueeze(0)
         x = torch.tanh(self.conv3(x))
         
         x = torch.cat((prev_weigths[0].unsqueeze(0).unsqueeze(-1),x.squeeze(0).squeeze(0)))

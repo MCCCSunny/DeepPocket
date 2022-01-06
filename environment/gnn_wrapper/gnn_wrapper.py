@@ -30,23 +30,30 @@ class GnnObservationWrapper(gym.ObservationWrapper):
 
         return data_batch
     
+    def forward(self,batch):
+        with torch.no_grad():
+            x = self.gcn(batch).reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0)
+        
+        return x
+
     def reset(self):
         obs, position = self.env.reset()
         self.obs_data_deque.extend(obs)
         data_batch = self.get_inital_data_rolling(obs)
         self.batch_data_deque.extend(data_batch)
         batch = Batch.from_data_list(data_batch)
-
-        return self.gcn(batch).reshape(self.number_of_assets,self.trading_window_size,3).permute(2, 0, 1).unsqueeze(0), torch.tensor(position, dtype=torch.float32)
+        
+        return self.forward(batch), torch.tensor(position, dtype=torch.float32)
 
     def observation(self, observation):
         self.obs_data_deque.append(observation)
         edge_weights = abs(np.corrcoef(self.mean(self.obs_data_deque)).flatten())
         self.batch_data_deque.append(Data(x = torch.tensor(observation, dtype = torch.float32), edge_index = self.edge_index, edge_attr = torch.tensor(edge_weights,dtype = torch.float32)))
-        batch = Batch.from_data_list(list(self.batch_data_deque))
+        batch = Batch.from_data_list(self.batch_data_deque)
 
-        return self.gcn(batch).reshape(self.number_of_assets,self.trading_window_size,3).permute(2, 0, 1).unsqueeze(0)
+        return self.forward(batch)
 
     
     def get_model_parameters(self):
         return self.gcn.parameters()
+    
