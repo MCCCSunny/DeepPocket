@@ -25,6 +25,7 @@ def train(env,agent,num_episodes):
             if i % 10 == 0:
                 plt.plot(range(len(a)),a)
                 plt.savefig('./plots/train_'+str(i))
+                plt.close()
             a = []
 
     print('Training time:',time.time() - start)
@@ -71,9 +72,9 @@ def get_args():
     parser.add_argument('--gnn_input_channels',type = int, default = 3, help = 'gnn input channels')
     parser.add_argument('--gnn_hidden_channels',type = str,default='8,8,8', help = 'hidden channel sizes (format: 16,16,16)')
     parser.add_argument('--gnn_output_channels',type = int, default = 3, help = 'gnn output channels')
-    parser.add_argument('--mem_size',type = int, default = 200, help = 'memory size')
+    parser.add_argument('--mem_size',type = int, default = 100, help = 'memory size')
     parser.add_argument('--sample_bias', type=float, default = 1e-5,help = 'sample bias')
-    parser.add_argument('--number_of_batches', type=int, default = 10, help = 'number of minibatches in agent learning')
+    parser.add_argument('--number_of_batches', type=int, default = 5, help = 'number of minibatches in agent learning')
     args = parser.parse_args()
 
     return args

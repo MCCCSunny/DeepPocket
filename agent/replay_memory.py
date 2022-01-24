@@ -24,7 +24,7 @@ class ReplayBuffer():
         self.mem_cntr += 1
 
     def sample_buffer(self):
-        index = self.distribution.sample().argmin()
+        index = self.distribution.sample().argmax()
 
         return self.state_memory[index:index+self.batch_size], self.action_memory[index:index+self.batch_size],  self.reward_memory[index:index+self.batch_size], self.new_state_memory[index:index+self.batch_size]
     
