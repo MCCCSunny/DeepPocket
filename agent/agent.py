@@ -16,17 +16,15 @@ class Agent():
         self.nb = nb
 
     def get_action(self,obs,prev_weigths):
-        with torch.autograd.set_detect_anomaly(True):
-            x = self.actor(obs, prev_weigths)
-    
-        return x
+        return self.actor(obs, prev_weigths)
+
     def store_transition(self, state, action, reward, state_):
         self.memory.store_transition(state, action, reward, state_)
 
     def sample_memory(self):
         state, actions, reward, new_state = self.memory.sample_buffer()
         states = torch.tensor(state)
-        actions = torch.stack(actions).clone()
+        actions = torch.stack(actions)
         rewards = torch.tensor(reward)
         states_ = torch.tensor(new_state)
 
@@ -43,19 +41,19 @@ class Agent():
             q_pred = self.critic(states)
             q_next = self.critic(states_)
             adv =  rewards + self.gamma* q_next - q_pred
-            critic_loss += (adv *q_pred).sum()
+            critic_loss += (adv *q_pred).mean()
             
-            # x = actions.clone().detach()
+            x = actions.clone().detach()
 
-            # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+            mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-            # mean = torch.clip(mean, min = 1e-6, max = 60)
-            # std = torch.clip(std,min = 1e-6,max = 30)
-            # dist = Normal(mean,std)
+            mean = torch.clip(mean, min = 1e-6, max = 60)
+            std = torch.clip(std,min = 1e-6,max = 30)
+            dist = Normal(mean,std)
 
-            # actor_loss = (-1*dist.log_prob(actions).sum() * adv.clone().detach()).sum()
-            actor_loss += (actions.log().sum()*adv.detach()).sum()
-        
+            actor_loss += (dist.log_prob(actions).mean() * adv.clone().detach()).mean()
+            #actor_loss += (actions.log().sum()*adv.detach()).sum()
+
         actor_loss.backward()
         critic_loss.backward()
         self.critic.optimizer.step()

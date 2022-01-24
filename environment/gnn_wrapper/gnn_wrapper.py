@@ -25,9 +25,10 @@ class GnnObservationWrapper(gym.ObservationWrapper):
         data_batch = []
         for i in range(0,len(obs)):
             observation = obs[i]
-            corr = abs(np.corrcoef(self.mean(obs[:i+1])))
+            corr = abs(np.corrcoef(self.mean(obs[:i+1]))).flatten()
             data_batch.append(Data(x = torch.tensor(observation, dtype = torch.float32), edge_index = self.edge_index, edge_attr = torch.tensor(corr.flatten(),dtype=torch.float32)))
-
+            
+        
         return data_batch
     
     def forward(self,batch):

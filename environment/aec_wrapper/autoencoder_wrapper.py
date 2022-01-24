@@ -18,11 +18,11 @@ class AecObservationWrapper(gym.ObservationWrapper):
         with torch.no_grad():
             x = self.autoencoder.encode(torch.tensor(filtered_obs,dtype=torch.float32))
 
-        return x.detach().numpy(), weights
+        return x.numpy(), weights
     
     def observation(self, observation):
         filtered_obs = observation[:,self.filter_indices].astype(np.float32)
         with torch.no_grad():
             x = self.autoencoder.encode(torch.tensor(filtered_obs,dtype=torch.float32))
 
-        return x.detach().numpy()
+        return x.numpy()
