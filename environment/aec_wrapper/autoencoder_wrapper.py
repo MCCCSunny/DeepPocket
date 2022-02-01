@@ -20,6 +20,7 @@ class AecObservationWrapper(gym.ObservationWrapper):
     def reset(self):
         obs, weights = self.env.reset()
         filtered_obs = obs[:,:,self.filter_indices].astype(np.float32)
+        self.obs_data_deque = deque(maxlen=self.trading_window_size)
         self.obs_data_deque.extend(filtered_obs)
         with torch.no_grad():
             x = self.autoencoder.encode(torch.tensor(self.obs_data_deque,dtype=torch.float32))

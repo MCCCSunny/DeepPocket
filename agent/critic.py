@@ -25,7 +25,7 @@ class Critic(nn.Module):
 
     def forward(self,x):
         #x = self.get_batch_rolling(x)
-        x = F.relu(self.conv1(x.reshape(50,3,28,30)))
+        x = F.relu(self.conv1(x.reshape(50,3,28,40)))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.dense(x.squeeze(-1))

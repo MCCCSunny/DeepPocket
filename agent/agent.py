@@ -54,7 +54,7 @@ class Agent():
             std = torch.clip(std,min = 1e-6,max = 30)
             dist = Normal(mean,std)
 
-            actor_loss += (-1*dist.log_prob(actions).mean() * adv.clone().detach()).mean()
+            actor_loss += (dist.log_prob(actions).sum() * adv.clone().detach()).mean()
             #actor_loss += (actions.log().mean()*adv.detach()).mean()
         
 
