@@ -35,7 +35,7 @@ class StockTradingEnv(Env):
         self.history = None
         self.mi = 0
         self.days = 0
-        self.x = 0 
+        self.x = 1
         
     def get_data(self,from_date):
         from_date = datetime.strptime(str(from_date),'%Y-%m-%d').date()
@@ -55,7 +55,7 @@ class StockTradingEnv(Env):
         self.total_reward = 0.0
         self.history = {}
         self.days = 0
-        self.x = 0
+        self.x = 1
         self.current_portfolio_value = self.starting_portfolio_value
         self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.starting_date)
 
@@ -128,9 +128,8 @@ class StockTradingEnv(Env):
                 self.found_aprox_mi = True
 
             self.mi = new_mi
-
-        before = self.current_portfolio_value
-        self.current_portfolio_value = self.current_portfolio_value *self.mi * np.dot(y_t,stock_weights)
+        self.x =  self.x * self.mi* np.dot(y_t,stock_weights)
+        self.current_portfolio_value = self.starting_portfolio_value * self.x
 
         return log(self.current_portfolio_value/self.starting_portfolio_value) 
 
