@@ -18,4 +18,5 @@ class Critic(nn.Module):
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.dense(x.squeeze(-1))
+        
         return x.reshape(-1)

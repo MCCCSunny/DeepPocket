@@ -16,14 +16,14 @@ def train(env,agent,num_episodes,args):
             done = False
             env.set_dates(args.train_start_date,args.train_end_date)
             obs, weights = env.reset()
-            agent.reset()
             while not done:
                 weights = agent.get_action(obs,weights)
                 obs_, reward, done, _ = env.step(weights.detach().numpy())
                 agent.store_transition(obs.detach(), weights, reward, obs_.detach())
                 agent.learn()
                 obs = obs_
-                a.append(env.get_current_portfolio_value())
+                #a.append(env.get_current_portfolio_value())
+
             if i % 50 == 0:
                 test(env,agent,args.test_start_date,args.test_end_date,i)
             
@@ -72,7 +72,7 @@ def get_args():
     parser.add_argument('--database_url',type = str, default = 'postgresql+psycopg2://postgres:lozinka@localhost:5555/diplomski', help='database url to save/load data')
     parser.add_argument('--cheb_k', type = int, default = 3, help = 'size of cheb filter')
     parser.add_argument('--gnn_input_channels',type = int, default = 3, help = 'gnn input channels')
-    parser.add_argument('--gnn_hidden_channels',type = str,default='8,8,8', help = 'hidden channel sizes (format: 16,16,16)')
+    parser.add_argument('--gnn_hidden_channels',type = str,default='8,8,8,8', help = 'hidden channel sizes (format: 16,16,16)')
     parser.add_argument('--gnn_output_channels',type = int, default = 3, help = 'gnn output channels')
     parser.add_argument('--mem_size',type = int, default = 100, help = 'memory size')
     parser.add_argument('--sample_bias', type=float, default = 1e-5,help = 'sample bias')
