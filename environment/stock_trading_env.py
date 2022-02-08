@@ -114,15 +114,15 @@ class StockTradingEnv(Env):
             #Only first mi aprox
             if self.current_tick == self.trading_window_size + 1:
                 self.mi = self.commision_p * sum(abs(commision_weights-stock_weights)[1:])
-            else:
-                pos_sum = 0
-                for i in range(1,len(stock_weights)):
-                    value = commision_weights[i] - self.mi * stock_weights[i]
-                    if value > 0.0:
-                        pos_sum = pos_sum + value
-
-                new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
             
+            pos_sum = 0
+            for i in range(1,len(stock_weights)):
+                value = commision_weights[i] - self.mi * stock_weights[i]
+                if value > 0.0:
+                    pos_sum = pos_sum + value
+
+            new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
+        
             #stop aprox if condition 
             if abs(self.mi -new_mi ) < 0.0001:
                 self.found_aprox_mi = True
@@ -132,8 +132,9 @@ class StockTradingEnv(Env):
         self.before = self.current_portfolio_value
         self.x =  self.x * self.mi* np.dot(y_t,stock_weights)
         self.current_portfolio_value = self.starting_portfolio_value * self.x
-    
-        return log(self.current_portfolio_value/self.starting_portfolio_value)
+        value = log(self.current_portfolio_value/self.before)
+
+        return value *1e4
 
     
     def get_current_portfolio_value(self):

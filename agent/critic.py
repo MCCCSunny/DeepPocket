@@ -10,7 +10,7 @@ from agent.model import ChebNetwork
 
 class Critic(nn.Module):
 
-    def __init__(self,in_channels,gnn_in_channels,gnn_hidden_channels,gnn_out_channels,cheb_k,num_assets,trading_window_size,lr, weight_decay):
+    def __init__(self,in_channels,gnn_in_channels,gnn_hidden_channels,gnn_out_channels,cheb_k,num_assets,trading_window_size,lr, weight_decay,batch_size=32):
         super(Critic, self).__init__()
         gnn_hidden_channels = [int(x) for x in gnn_hidden_channels.split(',')]
         self.gnn = ChebNetwork(gnn_in_channels,gnn_hidden_channels,gnn_out_channels,cheb_k)
@@ -20,12 +20,13 @@ class Critic(nn.Module):
         self.dense = nn.Linear(num_assets,1)
         self.trading_window_size = trading_window_size
         self.assets_number = num_assets
+        self.batch_size = batch_size
         self.edge_index = torch.tensor([np.tile(np.arange(0,num_assets),(num_assets)), np.tile(np.arange(0,num_assets),(num_assets,1)).transpose().flatten()])
         self.optimizer = optim.Adam(self.parameters(),lr = lr,weight_decay= weight_decay)
 
     def forward(self,x):
         #x = self.get_batch_rolling(x)
-        x = F.relu(self.conv1(x.reshape(50,3,28,40)))
+        x = F.relu(self.conv1(x.reshape(self.batch_size,3,self.assets_number,self.trading_window_size)))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = self.dense(x.squeeze(-1))
