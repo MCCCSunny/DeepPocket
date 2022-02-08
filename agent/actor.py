@@ -1,17 +1,13 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-
 
 class Actor(nn.Module):
 
-    def __init__(self,in_channels, trading_window_size,actor_lr, gnn_parameters,actor_weight_decay):
+    def __init__(self,in_channels, trading_window_size):
         super(Actor, self).__init__()
         self.conv1 = nn.Conv2d(in_channels,3,kernel_size=(1,3))
         self.conv2 = nn.Conv2d(3,3, kernel_size=(1,trading_window_size-2))
         self.conv3 = nn.Conv2d(4,1,kernel_size=(1,1))
-        #params = list(self.parameters()) + list(gnn_parameters) 
-        self.optimizer = optim.Adam(self.parameters(),lr = actor_lr,weight_decay = actor_weight_decay)
 
     def forward(self, x, prev_weigths):
         prev_weigths = prev_weigths.clone().detach()

@@ -118,6 +118,7 @@ class StockTradingEnv(Env):
         
         mi = self.calculate_after_commission(stock_weights,self.last_stock_weights,self.commision_rate)
         self.x =  self.x * mi* np.dot(y_t,stock_weights)
+        before = self.current_portfolio_value
         self.current_portfolio_value = self.starting_portfolio_value * self.x
 
         return log(self.current_portfolio_value/self.starting_portfolio_value) 
