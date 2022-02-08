@@ -51,7 +51,7 @@ class StockTradingEnv(Env):
 
     def reset(self):
         self.done = False
-        self.position = np.concatenate(([1],np.zeros(self.assets_number)),axis = 0)
+        self.last_stock_weights = np.concatenate(([1],np.zeros(self.assets_number)),axis = 0)
         self.total_reward = 0.0
         self.history = {}
         self.days = 0
@@ -59,7 +59,7 @@ class StockTradingEnv(Env):
         self.current_portfolio_value = self.starting_portfolio_value
         self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.starting_date)
 
-        return self.get_observation(reset=True), self.position
+        return self.get_observation(reset=True), self.last_stock_weights
 
 
     def step(self, equity_stock_weights):
@@ -73,7 +73,7 @@ class StockTradingEnv(Env):
             self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.buffer_end_date)
 
         step_reward = self.calculate_reward(equity_stock_weights)
-        self.position = equity_stock_weights
+        self.last_stock_weights = equity_stock_weights
         self.total_reward += step_reward
 
         observation = self.get_observation()
@@ -132,9 +132,8 @@ class StockTradingEnv(Env):
         self.before = self.current_portfolio_value
         self.x =  self.x * self.mi* np.dot(y_t,stock_weights)
         self.current_portfolio_value = self.starting_portfolio_value * self.x
-        value = log(self.current_portfolio_value/self.before)
 
-        return value *1e4
+        return log(self.current_portfolio_value/self.before) 
 
     
     def get_current_portfolio_value(self):
