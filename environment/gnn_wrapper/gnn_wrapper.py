@@ -32,8 +32,7 @@ class GnnObservationWrapper(gym.ObservationWrapper):
         return data_batch
     
     def forward(self,batch):
-        with torch.no_grad():
-            x = self.gcn(batch).reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0)
+        x = self.gcn(batch).reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0)
         
         return x
 

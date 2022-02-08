@@ -13,8 +13,7 @@ class StockTradingEnv(Env):
     def __init__(self, online, trading_window_size,max_buffer_size,database_url,start_date,end_date,assets_number = 28,starting_cash = 1):
         self.seed()
         self.engine = create_engine(database_url)
-        self.commision_p = 0.0015 
-        self.commision_s = 0.0015  
+        self.commision_rate = 0.0025 
         self.assets_number = assets_number
         self.max_buffer_size = max_buffer_size
         self.trading_window_size = trading_window_size
@@ -51,7 +50,7 @@ class StockTradingEnv(Env):
 
     def reset(self):
         self.done = False
-        self.position = np.concatenate(([1],np.zeros(self.assets_number)),axis = 0)
+        self.last_stock_weights = np.concatenate(([1],np.zeros(self.assets_number)),axis = 0)
         self.total_reward = 0.0
         self.history = {}
         self.days = 0
@@ -59,7 +58,7 @@ class StockTradingEnv(Env):
         self.current_portfolio_value = self.starting_portfolio_value
         self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.starting_date)
 
-        return self.get_observation(reset=True), self.position
+        return self.get_observation(reset=True), self.last_stock_weights
 
 
     def step(self, equity_stock_weights):
@@ -73,7 +72,7 @@ class StockTradingEnv(Env):
             self.trading_buffer, self.current_tick, self.buffer_end_date = self.get_data(self.buffer_end_date)
 
         step_reward = self.calculate_reward(equity_stock_weights)
-        self.position = equity_stock_weights
+        self.last_stock_weights = equity_stock_weights
         self.total_reward += step_reward
 
         observation = self.get_observation()
@@ -103,32 +102,22 @@ class StockTradingEnv(Env):
         for key, value in info.items():
             self.history[key].append(value)
 
+    def calculate_after_commission(self,w1, w0, commission_rate):
+
+        mu0 = 1
+        mu1 = 1 - 2*commission_rate + commission_rate ** 2
+        while abs(mu1-mu0) > 1e-10:
+            mu0 = mu1
+            mu1 = (1 - commission_rate * w0[0] - (2 * commission_rate - commission_rate ** 2) * np.sum(np.maximum(w0[1:] - mu1*w1[1:], 0))) / (1 - commission_rate * w1[0])
+
+        return mu1
 
     def calculate_reward(self, stock_weights):
 
         y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
         
-        # Aprox mi
-        if not self.found_aprox_mi:
-            commision_weights = (y_t * stock_weights)/ np.dot(y_t, stock_weights)
-            #Only first mi aprox
-            if self.current_tick == self.trading_window_size + 1:
-                self.mi = self.commision_p * sum(abs(commision_weights-stock_weights)[1:])
-            else:
-                pos_sum = 0
-                for i in range(1,len(stock_weights)):
-                    value = commision_weights[i] - self.mi * stock_weights[i]
-                    if value > 0.0:
-                        pos_sum = pos_sum + value
-
-                new_mi = (1/(1- self.commision_p * stock_weights[0]))*(1 - self.commision_p * commision_weights[0] - (self.commision_s + self.commision_p - self.commision_s*self.commision_p)*pos_sum)
-            
-            #stop aprox if condition 
-            if abs(self.mi -new_mi ) < 0.00001:
-                self.found_aprox_mi = True
-
-            self.mi = new_mi
-        self.x =  self.x * self.mi* np.dot(y_t,stock_weights)
+        mi = self.calculate_after_commission(stock_weights,self.last_stock_weights,self.commision_rate)
+        self.x =  self.x * mi* np.dot(y_t,stock_weights)
         self.current_portfolio_value = self.starting_portfolio_value * self.x
 
         return log(self.current_portfolio_value/self.starting_portfolio_value) 
