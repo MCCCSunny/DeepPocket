@@ -51,7 +51,7 @@ def test(env,agent,start_date,end_date,epoch):
 def get_args():
 
     parser = argparse.ArgumentParser()
-    parser = argparse.ArgumentParser()
+
     parser.add_argument('--assets_number', type = int, default = 28, help='number of assets')
     parser.add_argument('--trading_window_size',type = int, default = 25, help= 'number of last n trades taking in consideration')
     parser.add_argument('--gamma', type = float, default = 0.99, help='discount factor')
