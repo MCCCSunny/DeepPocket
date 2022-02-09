@@ -75,7 +75,7 @@ def get_args():
     parser.add_argument('--gnn_output_channels',type = int, default = 3, help = 'gnn output channels')
     parser.add_argument('--mem_size',type = int, default = 150, help = 'memory size')
     parser.add_argument('--sample_bias', type=float, default = 1e-5,help = 'sample bias')
-    parser.add_argument('--number_of_batches', type=int, default = 30, help = 'number of minibatches in agent learning')
+    parser.add_argument('--number_of_batches', type=int, default = 5, help = 'number of minibatches in agent learning')
 
     args = parser.parse_args()
 

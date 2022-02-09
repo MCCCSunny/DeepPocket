@@ -47,13 +47,13 @@ class Agent():
             adv =  rewards + self.gamma* q_next.clone().detach() - q_pred.clone().detach()
 
             critic_loss += torch.sum(adv*q_pred)
-            x = actions.clone().detach()
+            #x = actions.clone().detach()
 
-            mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+            # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-            mean = torch.clip(mean, min = 1e-6, max = 60)
-            std = torch.clip(std,min = 1e-6,max = 30)
-            dist = Normal(mean,std)
+            # mean = torch.clip(mean, min = 1e-6, max = 60)
+            # std = torch.clip(std,min = 1e-6,max = 30)
+            # dist = Normal(mean,std)
             actor_loss += torch.mean(-1*torch.mul(torch.mean(torch.log(actions)),adv))
             #actor_loss += (dist.log_prob(actions).sum() * adv.clone().detach()).mean()
             #actor_loss += (actions.log().mean()*adv.detach()).mean()
