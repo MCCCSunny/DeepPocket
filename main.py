@@ -1,5 +1,3 @@
-
-  
 import time
 from agent.agent import Agent
 from environment.utils import make_env
