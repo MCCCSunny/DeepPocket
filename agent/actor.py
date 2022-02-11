@@ -17,7 +17,7 @@ class Actor(nn.Module):
     def forward(self, x, prev_weigths):
         prev_weigths = prev_weigths.clone().detach()
 
-        x = torch.tanh(self.conv1(x.reshape(3,self.number_of_assets,self.trading_window_size).unsqueeze(0)))
+        x = torch.tanh(self.conv1(x.unsqueeze(0)))
         x = torch.tanh(self.conv2(x))
         x = torch.cat((prev_weigths[1:].unsqueeze(-1).unsqueeze(0),x.squeeze(0)),0).unsqueeze(0)
         x = torch.tanh(self.conv3(x))

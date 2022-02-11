@@ -24,9 +24,9 @@ class Agent():
 
     def sample_memory(self):
         state, actions, reward, new_state = self.memory.sample_buffer()
-        states = torch.tensor(state)
+        states = torch.stack(state)
         rewards = torch.tensor(reward)
-        states_ = torch.tensor(new_state)
+        states_ = torch.stack(new_state)
         actions = torch.stack(actions)
 
         return states, actions, rewards, states_
@@ -39,26 +39,25 @@ class Agent():
         critic_loss = 0
         self.critic.optimizer.zero_grad()
         self.actor.optimizer.zero_grad()   
-        for _ in range(self.nb):
+        
 
-            states, actions, rewards, states_, = self.sample_memory()
-            q_pred = self.critic(states)
-            q_next = self.critic(states_)
-            adv =  rewards + self.gamma* q_next.clone().detach() - q_pred.clone().detach()
+        states, actions, rewards, states_, = self.sample_memory()
+        q_pred = self.critic(states)
+        q_next = self.critic(states_)
+        adv =  rewards + self.gamma* q_next- q_pred
 
-            critic_loss += torch.mean(adv*q_pred)
-            #x = actions.clone().detach()
+        critic_loss = torch.mean(pow(adv,2))
+        x = actions.clone().detach()
 
-            # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+        mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-            # mean = torch.clip(mean, min = 1e-6, max = 60)
-            # std = torch.clip(std,min = 1e-6,max = 30)
-            # dist = Normal(mean,std)
-            actor_loss += -1*torch.mean(torch.mul(torch.sum(torch.log(actions)),adv))
-            #actor_loss += (dist.log_prob(actions).sum() * adv.clone().detach()).mean()
-            #actor_loss += (actions.log().mean()*adv.detach()).mean()
-            
-
+        mean = torch.clip(mean, min = 1e-6, max = 60)
+        std = torch.clip(std,min = 1e-6,max = 30)
+        dist = Normal(mean,std)
+        #actor_loss = -1*torch.mean(torch.mul(torch.sum(torch.log(actions)),adv))
+        actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
+        #actor_loss += (actions.log().mean()*adv.detach()).mean()
+        
         actor_loss.backward()
         critic_loss.backward()
         self.critic.optimizer.step()

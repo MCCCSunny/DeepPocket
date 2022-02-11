@@ -25,7 +25,7 @@ class AecObservationWrapper(gym.ObservationWrapper):
         with torch.no_grad():
             x = self.autoencoder.encode(torch.tensor(self.obs_data_deque,dtype=torch.float32))
 
-        return x, torch.tensor(weights, dtype = torch.float32)
+        return x.reshape(3,self.number_of_assets,self.trading_window_size), torch.tensor(weights, dtype = torch.float32)
     
     def observation(self, observation):
         filtered_obs = observation[:,self.filter_indices].astype(np.float32)
@@ -34,4 +34,4 @@ class AecObservationWrapper(gym.ObservationWrapper):
         with torch.no_grad():
             x = self.autoencoder.encode(torch.tensor(self.obs_data_deque,dtype=torch.float32))
 
-        return x
+        return x.reshape(3,self.number_of_assets,self.trading_window_size)

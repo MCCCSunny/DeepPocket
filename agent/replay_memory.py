@@ -8,8 +8,8 @@ class ReplayBuffer():
         self.mem_size = max_size
         self.mem_cntr = 0
         self.batch_size = batch_size
-        self.state_memory = np.zeros((self.mem_size,trading_window_size,number_of_assets,input_dims[0]), dtype=np.float32)
-        self.new_state_memory = np.zeros((self.mem_size,trading_window_size,number_of_assets,input_dims[0]), dtype=np.float32)
+        self.state_memory = [None]*self.mem_size
+        self.new_state_memory = [None]*self.mem_size
         self.action_memory = [None]*self.mem_size
         self.reward_memory = np.zeros(self.mem_size, dtype=np.float32)
         #probabilities = [sample_bias*pow((1-sample_bias),self.mem_size - t - self.batch_size) for t in range(self.mem_size - self.batch_size)]
@@ -30,7 +30,7 @@ class ReplayBuffer():
     
     def reset(self):
         self.mem_cntr = 0
-        self.state_memory = np.zeros(self.state_memory.shape, dtype=np.float32)
-        self.new_state_memory = np.zeros(self.new_state_memory.shape, dtype=np.float32)
+        self.state_memory = [None]*self.mem_size
+        self.new_state_memory = [None]*self.mem_size
         self.action_memory = [None]*self.mem_size
         self.reward_memory = np.zeros(self.mem_size, dtype=np.float32)
