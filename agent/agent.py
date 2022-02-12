@@ -44,18 +44,18 @@ class Agent():
         states, actions, rewards, states_, = self.sample_memory()
         q_pred = self.critic(states)
         q_next = self.critic(states_)
-        adv =  rewards + self.gamma* q_next- q_pred
+        adv =  rewards + self.gamma* q_next - q_pred
 
         critic_loss = torch.mean(pow(adv,2))
-        x = actions.clone().detach()
+        # x = actions.clone().detach()
 
-        mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+        # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-        mean = torch.clip(mean, min = 1e-6, max = 60)
-        std = torch.clip(std,min = 1e-6,max = 30)
-        dist = Normal(mean,std)
-        #actor_loss = -1*torch.mean(torch.mul(torch.sum(torch.log(actions)),adv))
-        actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
+        # mean = torch.clip(mean, min = 1e-6, max = 60)
+        # std = torch.clip(std,min = 1e-6,max = 30)
+        #dist = Normal(mean,std)
+        actor_loss = -1*torch.mean(torch.log(actions))
+        #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
         #actor_loss += (actions.log().mean()*adv.detach()).mean()
         
         actor_loss.backward()

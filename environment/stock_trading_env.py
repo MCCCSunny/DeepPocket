@@ -114,9 +114,8 @@ class StockTradingEnv(Env):
         return mu1
 
     def calculate_reward(self, stock_weights):
-
         y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
-        
+        self.future_prices = y_t
         mi = self.calculate_after_commission(stock_weights,self.last_stock_weights,self.commision_rate)
 
         self.before = self.current_portfolio_value
