@@ -14,14 +14,20 @@ class Actor(nn.Module):
         self.trading_window_size = trading_window_size
         self.optimizer = optim.Adam(self.parameters(),lr = actor_lr,weight_decay = actor_weight_decay)
 
-    def forward(self, x, prev_weigths):
+    def forward(self, x, prev_weigths, learn = False):
         prev_weigths = prev_weigths.clone().detach()
-
-        x = torch.tanh(self.conv1(x.unsqueeze(0)))
+        if learn == False:
+            x = x.unsqueeze(0)
+        x = torch.tanh(self.conv1(x))
         x = torch.tanh(self.conv2(x))
+        if learn:
+            c = prev_weigths[:,1:].unsqueeze(-1).unsqueeze(0).permute(1,0,2,3)
+            c = torch.cat([c,x],dim = 1)
+
+            print(c.shape)
         x = torch.cat((prev_weigths[1:].unsqueeze(-1).unsqueeze(0),x.squeeze(0)),0).unsqueeze(0)
         x = torch.tanh(self.conv3(x))
-        x = torch.cat((prev_weigths[0].unsqueeze(0).unsqueeze(-1),x.squeeze(0).squeeze(0)))
+        x = torch.cat(([1].unsqueeze(0).unsqueeze(-1),x.squeeze(0).squeeze(0)))
 
         return torch.softmax(x,dim = 0).reshape(-1)
 

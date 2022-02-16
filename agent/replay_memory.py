@@ -12,6 +12,7 @@ class ReplayBuffer():
         self.new_state_memory = [None]*self.mem_size
         self.action_memory = [None]*self.mem_size
         self.reward_memory = np.zeros(self.mem_size, dtype=np.float32)
+        self.sample_bias = sample_bias
         #probabilities = [sample_bias*pow((1-sample_bias),self.mem_size - t - self.batch_size) for t in range(self.mem_size - self.batch_size)]
         #self.distribution = Geometric(torch.tensor(probabilities))
 
@@ -24,8 +25,8 @@ class ReplayBuffer():
         self.mem_cntr += 1
 
     def sample_buffer(self):
-        index =0
-        
+        end = self.mem_cntr - self.batch_size
+        index = np.random.randint(0,end)
         return self.state_memory[index:index+self.batch_size], self.action_memory[index:index+self.batch_size],  self.reward_memory[index:index+self.batch_size], self.new_state_memory[index:index+self.batch_size]
     
     def reset(self):

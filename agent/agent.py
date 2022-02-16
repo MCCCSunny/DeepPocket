@@ -16,8 +16,8 @@ class Agent():
         self.nb = nb
 
 
-    def get_action(self,obs,prev_weigths):
-        return self.actor(obs, prev_weigths)
+    def get_action(self,obs,prev_weigths, learn = False):
+        return self.actor(obs, prev_weigths,learn = learn)
     
     def store_transition(self, state, action, reward, state_):
         self.memory.store_transition(state, action, reward, state_)
@@ -32,9 +32,9 @@ class Agent():
         return states, actions, rewards, states_
     
     def learn(self):
-        if self.memory.mem_cntr < self.memory.mem_size:
+        if self.memory.mem_cntr%501 != 0 :
             return
-        
+
         actor_loss = 0
         critic_loss = 0
         self.critic.optimizer.zero_grad()
@@ -42,27 +42,29 @@ class Agent():
         
 
         states, actions, rewards, states_, = self.sample_memory()
-        q_pred = self.critic(states)
-        q_next = self.critic(states_)
-        adv =  rewards + self.gamma* q_next - q_pred
+        for _ in range(self.nb):
+            q_pred = self.critic(states)
+            q_next = self.critic(states_)
+            adv =  rewards + self.gamma* q_next - q_pred
 
-        critic_loss = torch.mean(pow(adv,2))
-        # x = actions.clone().detach()
+            critic_loss = torch.mean(torch.mul(adv,q_pred))
+            # x = actions.clone().detach()
 
-        # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+            # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-        # mean = torch.clip(mean, min = 1e-6, max = 60)
-        # std = torch.clip(std,min = 1e-6,max = 30)
-        #dist = Normal(mean,std)
-        actor_loss = -1*torch.mean(torch.log(actions))
-        #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
-        #actor_loss += (actions.log().mean()*adv.detach()).mean()
-        
-        actor_loss.backward()
-        critic_loss.backward()
-        self.critic.optimizer.step()
-        self.actor.optimizer.step()
-        self.reset()
+            # mean = torch.clip(mean, min = 1e-6, max = 60)
+            # std = torch.clip(std,min = 1e-6,max = 30)
+            # dist = Normal(mean,std)
+            actions = self.get_action(states,actions,learn = True)
+            actor_loss = -1*torch.mean(torch.log(torch.mean(actions))*adv.detach())
+            #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
+            #actor_loss += (actions.log().mean()*adv.detach()).mean()
+            
+            actor_loss.backward()
+            critic_loss.backward()
+            self.critic.optimizer.step()
+            self.actor.optimizer.step()
+
     
     def reset(self):
         self.memory.reset()
