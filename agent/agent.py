@@ -2,8 +2,7 @@ from agent.actor import Actor
 from agent.critic import Critic
 import torch
 from agent.replay_memory import ReplayBuffer
-import numpy as np
-from torch.distributions import Normal
+
 
 class Agent():
 
@@ -15,54 +14,54 @@ class Agent():
         self.memory = ReplayBuffer(mem_size,trading_window_size, input_dims,assets_number,batch_size,sample_bias)
         self.nb = nb
 
-
     def get_action(self,obs,prev_weigths, learn = False):
+
         return self.actor(obs, prev_weigths,learn = learn)
     
     def store_transition(self, state, action, reward, state_):
         self.memory.store_transition(state, action, reward, state_)
 
     def sample_memory(self):
-        state, actions, reward, new_state = self.memory.sample_buffer()
-        states = torch.stack(state)
+        state, before_actions, reward, new_state = self.memory.sample_buffer()
+        states = torch.tensor(state)
         rewards = torch.tensor(reward)
-        states_ = torch.stack(new_state)
-        actions = torch.stack(actions)
+        states_ = torch.tensor(new_state)
+        before_actions = torch.tensor(before_actions)
 
-        return states, actions, rewards, states_
+        return states, before_actions, rewards, states_
     
     def learn(self):
-        if self.memory.mem_cntr%51 != 0 :
+        if self.memory.mem_cntr < self.batch_size:
             return
-
         
-        for _ in range(self.nb):
-            self.critic.optimizer.zero_grad()
-            self.actor.optimizer.zero_grad()
-            states, actions, rewards, states_, = self.sample_memory()
-            q_pred = self.critic(states)
-            q_next = self.critic(states_)
-            adv =  rewards + self.gamma* q_next.detach() - q_pred.detach()
+        
+        self.critic.optimizer.zero_grad()
+        self.actor.optimizer.zero_grad()
+        states, before_actions, rewards, states_, = self.sample_memory()
+        q_pred = self.critic(states)
+        q_next = self.critic(states_)
+        adv =  rewards + self.gamma* q_next.detach() - q_pred.detach()
 
-            critic_loss = torch.mean(torch.mul(adv,q_pred))
-            # x = actions.clone().detach()
+        critic_loss = torch.mean(torch.mul(adv,q_pred))
+        # x = actions.clone().detach()
 
-            # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
+        # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
 
-            # mean = torch.clip(mean, min = 1e-6, max = 60)
-            # std = torch.clip(std,min = 1e-6,max = 30)
-            # dist = Normal(mean,std)
-            
-            actions = self.get_action(states,actions,learn = True)
-            actor_loss = -1*torch.mean(torch.log(torch.mean(actions))*adv.detach())
-            #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
-            #actor_loss += (actions.log().mean()*adv.detach()).mean()
-            
-            actor_loss.backward()
-            critic_loss.backward()
-            self.critic.optimizer.step()
-            self.actor.optimizer.step()
-
+        # mean = torch.clip(mean, min = 1e-6, max = 60)
+        # std = torch.clip(std,min = 1e-6,max = 30)
+        # dist = Normal(mean,std)
+        
+        actions = self.get_action(states,before_actions,learn = True)
+        actor_loss = torch.mean(torch.log(torch.mean(actions))*adv.detach())
+        #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
+        #actor_loss += (actions.log().mean()*adv.detach()).mean()
+        
+        actor_loss.backward()
+        critic_loss.backward()
+        self.critic.optimizer.step()
+        self.actor.optimizer.step()
+        
+        
     
     def reset(self):
         self.memory.reset()

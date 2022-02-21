@@ -18,19 +18,17 @@ def train(env,agent,num_episodes,args):
             done = False
             env.set_dates(args.train_start_date,args.train_end_date)
             obs, weights = env.reset()
-            agent.reset()
             while not done:
-                next_weights = agent.get_action(obs,weights)
-         
-                obs_, reward, done, _ = env.step(next_weights.detach().numpy())
+                next_weights = agent.get_action(obs,weights).detach()
+                obs_, reward, done, _ = env.step(next_weights.numpy())
                 # pv_vector = torch.sum(weights*torch.from_numpy(np.array(env.future_prices,dtype=np.float16)))
-                agent.store_transition(obs, weights.detach(), reward, obs_ )
+                agent.store_transition(obs, weights, reward, obs_ )
                 agent.learn()
                 obs = obs_
                 weights = next_weights
                 a.append(env.get_current_portfolio_value())
             print(min(a),a[-1],max(a))
-            if i % 50 == 0:
+            if i % 100 == 0:
                 ax.plot(range(len(a)),a)
                 ax.figure.savefig('./plots/train_'+str(i))
                 test(env,agent,args.test_start_date,args.test_end_date,i)
@@ -62,15 +60,15 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--assets_number', type = int, default = 28, help='number of assets')
-    parser.add_argument('--trading_window_size',type = int, default = 31, help= 'number of last n trades taking in consideration')
-    parser.add_argument('--gamma', type = float, default = 0.98, help='discount factor')
+    parser.add_argument('--trading_window_size',type = int, default = 30, help= 'number of last n trades taking in consideration')
+    parser.add_argument('--gamma', type = float, default = 0.99, help='discount factor')
     parser.add_argument('--device', type=str, default='cpu', help='gpu/cpu')
     parser.add_argument('--num_episodes', type=int, default=1000, help='number of training episodes')    
-    parser.add_argument('--batch_size', type=int, default=32, help='batch size') 
-    parser.add_argument('--actor_lr', type=float, default=1e-4, help='actor learning rate')
-    parser.add_argument('--critic_lr', type=float, default=1e-3, help='critic learning rate')
-    parser.add_argument('--actor_weight_decay', type=float, default=0, help='L2 regularization on actor model weights')
-    parser.add_argument('--critic_weight_decay', type=float, default=0, help='L2 regularization on critic model weights')
+    parser.add_argument('--batch_size', type=int, default=109, help='batch size') 
+    parser.add_argument('--actor_lr', type=float, default=1e-5, help='actor learning rate')
+    parser.add_argument('--critic_lr', type=float, default=2e-3, help='critic learning rate')
+    parser.add_argument('--actor_weight_decay', type=float, default=1e-8, help='L2 regularization on actor model weights')
+    parser.add_argument('--critic_weight_decay', type=float, default=1e-8, help='L2 regularization on critic model weights')
     parser.add_argument('--train_start_date', type=str,default = '2002-04-01', help='training start date (format: %YYYY-mm-dd)')
     parser.add_argument('--train_end_date', type=str,default = '2018-10-19', help='training end date (format: %YYYY-mm-dd)')
     parser.add_argument('--test_start_date', type=str,default = '2019-06-09', help='testing start date (format: %YYYY-mm-dd)')

@@ -18,7 +18,7 @@ class Actor(nn.Module):
         self.optimizer = optim.Adam(self.parameters(),lr = actor_lr,weight_decay = actor_weight_decay)
 
     def forward(self, x, prev_weigths, learn = False):
-        prev_weigths = prev_weigths.clone().detach()
+        prev_weigths = prev_weigths.clone().detach().to(torch.float32)
         if learn == False:
             x = x.unsqueeze(0)
         x = torch.tanh(self.conv1(x))
@@ -30,11 +30,12 @@ class Actor(nn.Module):
             c = prev_weigths[:,1:].unsqueeze(-1).unsqueeze(0).permute(1,0,2,3)
             x = torch.cat([c,x],dim = 1)
         else:
+            c = prev_weigths[1:].unsqueeze(-1).unsqueeze(0)
             x = torch.cat((prev_weigths[1:].unsqueeze(-1).unsqueeze(0),x.squeeze(0)),0).unsqueeze(0)
-        
+
         x = torch.tanh(self.conv3(x))
         if learn:
-            cash = torch.ones((32,1,1,1)) * self.alpha
+            cash = torch.ones((x.shape[0],1,1,1)) * self.alpha
             x = torch.cat([cash, x], -2)
             
         else:

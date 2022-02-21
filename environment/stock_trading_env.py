@@ -121,8 +121,10 @@ class StockTradingEnv(Env):
         self.before = self.current_portfolio_value
         self.x =  self.x * mi* np.dot(y_t,stock_weights)
         self.current_portfolio_value = self.starting_portfolio_value * self.x
-
-        return log(self.current_portfolio_value/self.before) 
+        reward = log(self.current_portfolio_value/self.before) 
+        if reward < 0:
+            return reward*1e5
+        return reward*1e3
 
     
     def get_current_portfolio_value(self):

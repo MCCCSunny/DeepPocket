@@ -23,15 +23,15 @@ class AecObservationWrapper(gym.ObservationWrapper):
         self.obs_data_deque = deque(maxlen=self.trading_window_size)
         self.obs_data_deque.extend(filtered_obs)
         with torch.no_grad():
-            x = self.autoencoder.encode(torch.tensor(self.obs_data_deque,dtype=torch.float32))
+            x = self.autoencoder.encode(torch.tensor(np.array(self.obs_data_deque),dtype=torch.float32))
 
-        return x.reshape(3,self.number_of_assets,self.trading_window_size), torch.tensor(weights, dtype = torch.float32)
+        return x.reshape(3,self.number_of_assets,self.trading_window_size), torch.from_numpy(weights)
     
     def observation(self, observation):
         filtered_obs = observation[:,self.filter_indices].astype(np.float32)
         self.obs_data_deque.append(filtered_obs)
 
         with torch.no_grad():
-            x = self.autoencoder.encode(torch.tensor(self.obs_data_deque,dtype=torch.float32))
+            x = self.autoencoder.encode(torch.tensor(np.array(self.obs_data_deque),dtype=torch.float32))
 
         return x.reshape(3,self.number_of_assets,self.trading_window_size)
