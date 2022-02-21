@@ -32,20 +32,17 @@ class Agent():
         return states, actions, rewards, states_
     
     def learn(self):
-        if self.memory.mem_cntr%501 != 0 :
+        if self.memory.mem_cntr%51 != 0 :
             return
 
-        actor_loss = 0
-        critic_loss = 0
-        self.critic.optimizer.zero_grad()
-        self.actor.optimizer.zero_grad()   
         
-
-        states, actions, rewards, states_, = self.sample_memory()
         for _ in range(self.nb):
+            self.critic.optimizer.zero_grad()
+            self.actor.optimizer.zero_grad()
+            states, actions, rewards, states_, = self.sample_memory()
             q_pred = self.critic(states)
             q_next = self.critic(states_)
-            adv =  rewards + self.gamma* q_next - q_pred
+            adv =  rewards + self.gamma* q_next.detach() - q_pred.detach()
 
             critic_loss = torch.mean(torch.mul(adv,q_pred))
             # x = actions.clone().detach()
@@ -55,6 +52,7 @@ class Agent():
             # mean = torch.clip(mean, min = 1e-6, max = 60)
             # std = torch.clip(std,min = 1e-6,max = 30)
             # dist = Normal(mean,std)
+            
             actions = self.get_action(states,actions,learn = True)
             actor_loss = -1*torch.mean(torch.log(torch.mean(actions))*adv.detach())
             #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())

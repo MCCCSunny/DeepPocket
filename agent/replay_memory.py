@@ -26,7 +26,11 @@ class ReplayBuffer():
 
     def sample_buffer(self):
         end = self.mem_cntr - self.batch_size
-        index = np.random.randint(0,end)
+        index = np.random.geometric(self.sample_bias)
+        while index > end:
+            index = np.random.geometric(self.sample_bias)
+
+        # index = np.random.randint(0,end)
         return self.state_memory[index:index+self.batch_size], self.action_memory[index:index+self.batch_size],  self.reward_memory[index:index+self.batch_size], self.new_state_memory[index:index+self.batch_size]
     
     def reset(self):

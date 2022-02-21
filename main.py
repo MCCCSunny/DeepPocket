@@ -21,6 +21,7 @@ def train(env,agent,num_episodes,args):
             agent.reset()
             while not done:
                 next_weights = agent.get_action(obs,weights)
+         
                 obs_, reward, done, _ = env.step(next_weights.detach().numpy())
                 # pv_vector = torch.sum(weights*torch.from_numpy(np.array(env.future_prices,dtype=np.float16)))
                 agent.store_transition(obs, weights.detach(), reward, obs_ )
@@ -61,13 +62,13 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--assets_number', type = int, default = 28, help='number of assets')
-    parser.add_argument('--trading_window_size',type = int, default = 10, help= 'number of last n trades taking in consideration')
-    parser.add_argument('--gamma', type = float, default = 0.99, help='discount factor')
+    parser.add_argument('--trading_window_size',type = int, default = 31, help= 'number of last n trades taking in consideration')
+    parser.add_argument('--gamma', type = float, default = 0.98, help='discount factor')
     parser.add_argument('--device', type=str, default='cpu', help='gpu/cpu')
     parser.add_argument('--num_episodes', type=int, default=1000, help='number of training episodes')    
     parser.add_argument('--batch_size', type=int, default=32, help='batch size') 
-    parser.add_argument('--actor_lr', type=float, default=1e-3, help='actor learning rate')
-    parser.add_argument('--critic_lr', type=float, default=1e-2, help='critic learning rate')
+    parser.add_argument('--actor_lr', type=float, default=1e-4, help='actor learning rate')
+    parser.add_argument('--critic_lr', type=float, default=1e-3, help='critic learning rate')
     parser.add_argument('--actor_weight_decay', type=float, default=0, help='L2 regularization on actor model weights')
     parser.add_argument('--critic_weight_decay', type=float, default=0, help='L2 regularization on critic model weights')
     parser.add_argument('--train_start_date', type=str,default = '2002-04-01', help='training start date (format: %YYYY-mm-dd)')
@@ -83,8 +84,8 @@ def get_args():
     parser.add_argument('--gnn_hidden_channels',type = str,default='8,8,8', help = 'hidden channel sizes (format: 16,16,16)')
     parser.add_argument('--gnn_output_channels',type = int, default = 3, help = 'gnn output channels')
     parser.add_argument('--mem_size',type = int, default = 5000, help = 'memory size')
-    parser.add_argument('--sample_bias', type=float, default = 1e-5,help = 'sample bias')
-    parser.add_argument('--number_of_batches', type=int, default = 5, help = 'number of minibatches in agent learning')
+    parser.add_argument('--sample_bias', type=float, default = 5e-5,help = 'sample bias')
+    parser.add_argument('--number_of_batches', type=int, default = 3, help = 'number of minibatches in agent learning')
 
     args = parser.parse_args()
 
