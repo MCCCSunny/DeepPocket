@@ -16,7 +16,7 @@ def train(model):
     optimizer = optim.Adam(model.parameters(), lr = 0.0001)
     criterion = nn.MSELoss()
     train_loader = DataLoader(train_dataset,batch_size = 64, shuffle = True)
-    for epoch in range(150):
+    for epoch in range(1000):
         model.train()
         for x,y in train_loader:
             optimizer.zero_grad()
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     model = LinearAutoEncoder(in_features = 11,hidden_size = [10,9],out_features = 3)
     train(model)
     test_loader = test(model)
-    torch.save(model.state_dict(), './autoencoder/linear_autoencoder.pt')
+    torch.save(model.state_dict(), 'environment/aec_wrapper/linear_autoencoder.pt')
     plot(model,test_loader)
 
 

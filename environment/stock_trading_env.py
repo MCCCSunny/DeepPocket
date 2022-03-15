@@ -103,28 +103,35 @@ class StockTradingEnv(Env):
             self.history[key].append(value)
 
 
-    def calculate_after_commission(self,w1, w0, commission_rate):
-
-        mu0 = 1
-        mu1 = 1 - 2*commission_rate + commission_rate ** 2
-        while abs(mu1-mu0) > 1e-10:
-            mu0 = mu1
-            mu1 = (1 - commission_rate * w0[0] - (2 * commission_rate - commission_rate ** 2) * np.sum(np.maximum(w0[1:] - mu1*w1[1:], 0))) / (1 - commission_rate * w1[0])
-
-        return mu1
-
     def calculate_reward(self, stock_weights):
-        y_t = np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,5].reshape(-1)), axis=0)
-        self.future_prices = y_t
-        mi = self.calculate_after_commission(stock_weights,self.last_stock_weights,self.commision_rate)
+        y_t = np.array(np.concatenate(([1],self.trading_buffer[self.current_tick - 1][:,4].reshape(-1)), axis=0),dtype=np.float32)
+    
+        #
+        # print("y1:",y1)
+        # print("w1",w1)
+        dw1 = (y_t * self.last_stock_weights) / (np.dot(y_t, np.abs(self.last_stock_weights)) + 1e-7)  # (eq7) weights evolve into
+        # print("w0:",w0)
+        # (eq16) cost to change portfolio
+        # (excluding change in cash to avoid double counting for transaction cost)
+        c1 = self.commision_rate * (np.abs(dw1[1:] - stock_weights[1:])).sum()
+        p1 = self.current_portfolio_value * (1 - c1) * np.exp(np.dot(np.log(y_t), self.last_stock_weights))  # (eq11) final portfolio value
+        p1 = p1 * (1 - 0)  # we can add a cost to holding
 
-        self.before = self.current_portfolio_value
-        self.x =  self.x * mi* np.dot(y_t,stock_weights)
-        self.current_portfolio_value = self.starting_portfolio_value * self.x
-        reward = log(self.current_portfolio_value/self.before) 
-        if reward < 0:
-            return reward*1e5
-        return reward*1e3
+        # can't have negative holdings in this model (no shorts)
+        # p1 = np.clip(p1, 0, np.inf)
+
+        rho1 = p1 / self.current_portfolio_value - 1  # rate of returns
+        r1 = np.log((p1 + 1e-7) / (self.current_portfolio_value + 1e-7))  # (eq10) log rate of return
+        # r1 = np.log(1 - c1) + np.dot(np.log(y1), w0)  # (eq10) log rate of return
+        # (eq22) immediate reward is log rate of return scaled by episode length
+        reward = r1 / self.current_tick
+        # reward = np.power(r1, 1/self.steps)
+
+        # remember for next step
+        self.last_stock_weights = stock_weights
+        self.current_portfolio_value = p1
+
+        return reward*1e4
 
     
     def get_current_portfolio_value(self):

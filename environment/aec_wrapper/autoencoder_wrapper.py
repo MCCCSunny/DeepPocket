@@ -9,7 +9,7 @@ class AecObservationWrapper(gym.ObservationWrapper):
         super(AecObservationWrapper, self).__init__(env)
         self.observation_space = gym.spaces.Box(env.observation_space.low,env.observation_space.high,dtype = np.float32)
         self.autoencoder = LinearAutoEncoder(in_features =  aec_layers_size[0], hidden_size = aec_layers_size[1], out_features = out_features)
-        self.filter_indices = [3,4,5,7,8,9,10,11,12,13,14,]
+        self.filter_indices = [2,3,4,6,7,8,9,10,11,12,13,]
         self.obs_data_deque = deque(maxlen=trading_window_size)
         self.number_of_assets = number_of_assets
         self.trading_window_size = trading_window_size
@@ -20,6 +20,7 @@ class AecObservationWrapper(gym.ObservationWrapper):
     def reset(self):
         obs, weights = self.env.reset()
         filtered_obs = obs[:,:,self.filter_indices].astype(np.float32)
+        
         self.obs_data_deque = deque(maxlen=self.trading_window_size)
         self.obs_data_deque.extend(filtered_obs)
         with torch.no_grad():

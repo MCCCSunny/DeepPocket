@@ -32,6 +32,7 @@ class ReplayBuffer():
 
         # return self.state_memory[index:index+self.batch_size], self.action_memory[index:index+self.batch_size],  self.reward_memory[index:index+self.batch_size], self.new_state_memory[index:index+self.batch_size]
         max_mem = min(self.mem_cntr, self.mem_size)
+
         batch = np.random.choice(max_mem, self.batch_size, replace=False)
 
         states = self.state_memory[batch]

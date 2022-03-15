@@ -1,3 +1,4 @@
+from multiprocessing import connection
 import pandas as pd
 from utils import calculate_indicators
 import yfinance as yf
@@ -5,15 +6,15 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists,create_database
 
 def db_create(engine_url, dataframe):
-    engine = create_engine(engine_url)
+    engine = create_engine(engine_url, echo=False, pool_recycle=3600)
 
     if not database_exists(engine.url):
         create_database(engine.url)
 
     if database_exists(engine.url):
-        data_type = 'data'
-        print('Populating database with', data_type)
-        dataframe.to_sql(data_type, engine)
+        connection = engine.connect()
+        dataframe.to_sql('data',con=connection, index=False,if_exists='append')
+
 
 def download_data(symbols):
     return yf.download(
@@ -21,7 +22,6 @@ def download_data(symbols):
             period = 'max',
             interval = "1d",
             group_by = 'ticker',
-            auto_adjust = True,
             prepost = True,
             threads = True,
             proxy = None
@@ -39,7 +39,7 @@ def process_data(data,number_of_stocks,store_file = True):
 
         df = calculate_indicators(df)
         df = df[df['Date'] >= '2002-01-02'].reset_index()
-        df.drop(columns=['index'], inplace=True)
+        df.drop(columns=['index','Adj Close'], inplace=True)
         df.rename(columns= {'Date':'date'}, inplace=True)
         if store_file:
             df.to_pickle('./data/'+str(symbol)+'.pkl')

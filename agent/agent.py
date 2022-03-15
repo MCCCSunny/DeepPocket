@@ -13,6 +13,7 @@ class Agent():
         self.batch_size = batch_size
         self.memory = ReplayBuffer(mem_size,trading_window_size, input_dims,assets_number,batch_size,sample_bias)
         self.nb = nb
+        self.criterion = torch.nn.MSELoss()
 
     def get_action(self,obs,prev_weigths, learn = False):
 
@@ -31,18 +32,18 @@ class Agent():
         return states, before_actions, rewards, states_
     
     def learn(self):
-        if self.memory.mem_cntr < self.batch_size:
+        
+        if not self.memory.mem_cntr % self.batch_size == 0:
             return
-        
-        
+
         self.critic.optimizer.zero_grad()
         self.actor.optimizer.zero_grad()
         states, before_actions, rewards, states_, = self.sample_memory()
         q_pred = self.critic(states)
         q_next = self.critic(states_)
-        adv =  rewards + self.gamma* q_next.detach() - q_pred.detach()
+        adv =  rewards + self.gamma* q_next.detach()
 
-        critic_loss = torch.mean(torch.mul(adv,q_pred))
+        critic_loss =self.criterion(adv,q_pred)
         # x = actions.clone().detach()
 
         # mean,std  = torch.mean(x, dim=0), torch.std(x, dim = 0)
@@ -55,9 +56,8 @@ class Agent():
         actor_loss = torch.mean(torch.log(torch.mean(actions))*adv.detach())
         #actor_loss = -1*torch.mean(torch.sum(dist.log_prob(actions)) * adv.clone().detach())
         #actor_loss += (actions.log().mean()*adv.detach()).mean()
-        
-        actor_loss.backward()
         critic_loss.backward()
+        actor_loss.backward()
         self.critic.optimizer.step()
         self.actor.optimizer.step()
         
